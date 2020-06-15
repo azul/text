@@ -27,6 +27,9 @@
 		@hide="hideLinkMenu">
 		<div class="menububble" :class="{ 'is-active': menu.isActive }" :style="`left: ${menu.left}px; bottom: ${menu.bottom}px;`">
 			<form v-if="linkMenuIsActive" class="menububble__form" @submit.prevent="setLinkUrl(commands.link, linkUrl)">
+				<button
+					class="icon-file"
+					@click="selectFile(commands.link)" />
 				<input ref="linkInput"
 					v-model="linkUrl"
 					class="menububble__input"
@@ -52,6 +55,7 @@
 <script>
 import { EditorMenuBubble } from 'tiptap'
 import Tooltip from '@nextcloud/vue/dist/Directives/Tooltip'
+import { fetchFileInfo } from './../helpers/files'
 
 export default {
 	name: 'MenuBubble',
@@ -87,6 +91,24 @@ export default {
 			this.linkMenuIsActive = false
 		},
 
+		selectFile(command) {
+			const currentUser = OC.getCurrentUser()
+			if (!currentUser) {
+				return
+			}
+			OC.dialogs.filepicker('Select file to link to', (file) => {
+				fetchFileInfo(currentUser.uid, file).then((info) => {
+					const fileInfo = info[0]
+					// todo: use optimal path
+					const path = (`${fileInfo.path}/${fileInfo.name}`)
+					const encodedPath = path.split('/').map(encodeURIComponent).join('/')
+					const href = `${encodedPath}?fileId=${fileInfo.id}`
+
+					this.setLinkUrl(command, href)
+				})
+			}, false, [], true)
+			// todo: ,  undefined, this.linkPath)
+		},
 		setLinkUrl(command, url) {
 			if (url && !url.match(/^[a-zA-Z]+:\/\//) && !url.match(/^\//)) {
 				url = 'https://' + url
