@@ -75,7 +75,7 @@
 import { EditorMenuBar } from 'tiptap'
 import Tooltip from '@nextcloud/vue/dist/Directives/Tooltip'
 import menuBarIcons from './../mixins/menubar'
-import { fetchFileInfo } from './../helpers/files'
+import { fetchFileInfo, optimalPath } from './../helpers/files'
 
 import Actions from '@nextcloud/vue/dist/Components/Actions'
 import ActionButton from '@nextcloud/vue/dist/Components/ActionButton'
@@ -158,14 +158,6 @@ export default {
 				action: (commands) => {
 					this.showImagePrompt(commands.image)
 				},
-			}, {
-				label: t('text', 'Insert link'),
-				class: 'icon-link',
-				isActive: () => {
-				},
-				action: (commands) => {
-					this.showLinkPrompt(commands.link)
-				},
 			}]
 		},
 		childPopoverMenu() {
@@ -205,10 +197,6 @@ export default {
 		},
 		imagePath() {
 			return this.lastImagePath
-				|| this.filePath.split('/').slice(0, -1).join('/')
-		},
-		linkPath() {
-			return this.lastLinkPath
 				|| this.filePath.split('/').slice(0, -1).join('/')
 		},
 	},
@@ -266,7 +254,7 @@ export default {
 						mimetype: fileInfo.mimetype,
 						hasPreview: fileInfo.hasPreview,
 					}
-					const path = this.optimalPathTo(`${fileInfo.path}/${fileInfo.name}`)
+					const path = optimalPath(this.filePath, `${fileInfo.path}/${fileInfo.name}`)
 					const encodedPath = path.split('/').map(encodeURIComponent).join('/')
 					const meta = Object.entries(appendMeta).map(([key, val]) => `${key}=${encodeURIComponent(val)}`).join('&')
 					const src = `${encodedPath}?fileId=${fileInfo.id}#${meta}`
@@ -277,43 +265,6 @@ export default {
 					})
 				})
 			}, false, [], true, undefined, this.imagePath)
-		},
-		showLinkPrompt(command) {
-			const currentUser = OC.getCurrentUser()
-			if (!currentUser) {
-				return
-			}
-			const _command = command
-			OC.dialogs.filepicker('Insert a link', (file) => {
-				fetchFileInfo(currentUser.uid, file).then((info) => {
-					const fileInfo = info[0]
-					this.lastLinkPath = fileInfo.path
-					const path = this.optimalPathTo(`${fileInfo.path}/${fileInfo.name}`)
-					const encodedPath = path.split('/').map(encodeURIComponent).join('/')
-					const href = `${encodedPath}?fileId=${fileInfo.id}`
-
-					_command({
-						href,
-					})
-				})
-			}, false, [], true, undefined, this.linkPath)
-		},
-		optimalPathTo(targetFile) {
-			const absolutePath = targetFile.split('/')
-			const relativePath = this.relativePathTo(targetFile).split('/')
-			return relativePath.length < absolutePath.length
-				? relativePath.join('/')
-				: targetFile
-		},
-		relativePathTo(targetFile) {
-			const current = this.filePath.split('/')
-			const target = targetFile.split('/')
-			current.pop() // ignore filename
-			while (current[0] === target[0]) {
-				current.shift()
-				target.shift()
-			}
-			return current.fill('..').concat(target).join('/')
 		},
 	},
 }
