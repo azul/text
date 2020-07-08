@@ -75,7 +75,7 @@
 import { EditorMenuBar } from 'tiptap'
 import Tooltip from '@nextcloud/vue/dist/Directives/Tooltip'
 import menuBarIcons from './../mixins/menubar'
-import { fetchFileInfo, optimalPath } from './../helpers/files'
+import { optimalPath } from './../helpers/files'
 
 import Actions from '@nextcloud/vue/dist/Components/Actions'
 import ActionButton from '@nextcloud/vue/dist/Components/ActionButton'
@@ -245,8 +245,8 @@ export default {
 			}
 			const _command = command
 			OC.dialogs.filepicker(t('text', 'Insert an image'), (file) => {
-				fetchFileInfo(currentUser.uid, file).then((info) => {
-					const fileInfo = info[0]
+				const client = OC.Files.getClient()
+				client.getFileInfo(file).then((_status, fileInfo) => {
 					this.lastImagePath = fileInfo.path
 
 					// dirty but works so we have the information stored in markdown

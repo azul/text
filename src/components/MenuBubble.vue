@@ -64,7 +64,7 @@
 <script>
 import { EditorMenuBubble } from 'tiptap'
 import Tooltip from '@nextcloud/vue/dist/Directives/Tooltip'
-import { fetchFileInfo, optimalPath } from './../helpers/files'
+import { optimalPath } from './../helpers/files'
 
 export default {
 	name: 'MenuBubble',
@@ -111,8 +111,8 @@ export default {
 			}
 			const startPath = this.filePath.split('/').slice(0, -1).join('/')
 			OC.dialogs.filepicker(t('text', 'Select file to link to'), (file) => {
-				fetchFileInfo(currentUser.uid, file).then((info) => {
-					const fileInfo = info[0]
+				const client = OC.Files.getClient()
+				client.getFileInfo(file).then((_status, fileInfo) => {
 					const path = optimalPath(this.filePath, `${fileInfo.path}/${fileInfo.name}`)
 					const encodedPath = path.split('/').map(encodeURIComponent).join('/')
 					command({ href: `${encodedPath}?fileId=${fileInfo.id}` })
